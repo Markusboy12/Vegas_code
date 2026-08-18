@@ -14,14 +14,18 @@ class AgentRouter:
     """
     Router для вызова LLM с поддержкой ролей и fallback-цепочек.
     
-    Распределение ролей:
-    - plan: декомпозиция задач (OpenRouter Nemotron)
-    - generate: быстрая генерация кода (Groq qwen3.6-27B)
-    - fix_early: первые попытки исправления (Groq qwen3.6-27B)
-    - fix_late: эскалация при залипании (Groq gpt-oss-120B / OrcaRouter)
-    - fix_deep: глубокий разбор traceback (OpenRouter Nemotron)
-    - critic: код-ревью (Agnes Flash)
-    - memory: извлечение фактов (любой доступный)
+    Принцип распределения:
+    Шесть провайдеров — избыточно как "просто список альтернатив", но осмысленно
+    как распределение по ролям в агентном цикле, где у каждого своя сильная сторона:
+    - Groq (LPU): скорость для итеративного цикла генерации/исправления
+    - OrcaRouter: мета-шлюз с собственным failover по 200+ моделям
+    - Agnes AI: critic-агент с большим контекстом (256K-512K)
+    - OpenRouter Nemotron: reasoning для планирования и разбора traceback
+    - Ollama Cloud: резервный пул №1 (бесплатный fallback)
+    - Opencode Zen: резервный пул №2 + DeepSeek для код-задач
+    
+    Fallback-цепочка при отказе:
+    Groq → OrcaRouter → Ollama Cloud → Opencode Zen
     """
 
     def __init__(self):

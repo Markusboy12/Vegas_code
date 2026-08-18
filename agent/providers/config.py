@@ -36,17 +36,32 @@ PROVIDERS = {
 }
 
 # Распределение ролей в агентном цикле
+# Принцип: 6 провайдеров — не просто список альтернатив, а распределение по ролям
 ROLE_MAPPING = {
+    # Планирование/декомпозиция задач — Nemotron (сильный reasoning)
     "plan": [("openrouter", "planner")],
+    
+    # Быстрая генерация кода — Groq LPU (критично для итеративного цикла)
     "generate": [("groq", "fast")],
+    
+    # Первые попытки исправления (1-2) — скорость важна
     "fix_early": [("groq", "fast")],
+    
+    # Эскалация при залипании (попытка 3+) — крупная модель или OrcaRouter
     "fix_late": [("groq", "strong"), ("orcarouter", "auto")],
+    
+    # Глубокий разбор traceback — Nemotron reasoning
     "fix_deep": [("openrouter", "planner")],
+    
+    # Critic/код-ревью — Agnes Flash (другая модельная семья, контекст 256K-512K)
     "critic": [("agnes", "critic")],
+    
+    # Извлечение фактов для памяти — любой доступный (скорость не критична)
     "memory": [("groq", "fast")],
 }
 
-# Fallback-цепочка при отказе провайдера
+# Fallback-цепочка при отказе провайдера (мета-шлюз)
+# Groq → OrcaRouter → Ollama Cloud → Opencode Zen
 FALLBACK_CHAIN = [
     ("groq", "fast"),
     ("orcarouter", "auto"),
